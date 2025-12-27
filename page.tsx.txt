@@ -1,0 +1,264 @@
+'use client';
+import React, { useState, useEffect } from 'react';
+
+export default function GerenciarEstoque() {
+  const [estoque, setEstoque] = useState<any[]>([]);
+  const [nome, setNome] = useState('');
+  const [preco, setPreco] = useState('');
+  const [quantidade, setQuantidade] = useState('');
+  const [foto, setFoto] = useState<string | null>(null);
+
+  useEffect(() => {
+    const salvo = JSON.parse(localStorage.getItem('estoque_jkb') || '[]');
+    setEstoque(salvo);
+  }, []);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setFoto(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removerFotoSelecionada = () => setFoto(null);
+
+  const salvarProduto = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nome || !preco || !quantidade) return alert('Preencha tudo!');
+
+    const novoProduto = {
+      id: Date.now(),
+      nome,
+      preco,
+      quantidade,
+      foto,
+    };
+
+    const novoEstoque = [...estoque, novoProduto];
+    setEstoque(novoEstoque);
+    localStorage.setItem('estoque_jkb', JSON.stringify(novoEstoque));
+
+    setNome('');
+    setPreco('');
+    setQuantidade('');
+    setFoto(null);
+  };
+
+  const excluirProduto = (id: number) => {
+    if (confirm('Excluir este produto?')) {
+      const filtrado = estoque.filter((p) => p.id !== id);
+      setEstoque(filtrado);
+      localStorage.setItem('estoque_jkb', JSON.stringify(filtrado));
+    }
+  };
+
+  return (
+    <div
+      style={{
+        backgroundColor: '#000',
+        color: '#fff',
+        minHeight: '100vh',
+        padding: '20px',
+        fontFamily: 'Arial, sans-serif',
+      }}
+    >
+      {/* BOTÃO VOLTAR E TÍTULO */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          maxWidth: '800px',
+          margin: '0 auto 30px auto',
+        }}
+      >
+        <button
+          onClick={() => (window.location.href = '/')}
+          style={btnVoltarStyle}
+        >
+          ← Voltar ao Catálogo
+        </button>
+        <h1 style={{ color: '#CCAA66', fontSize: '20px' }}>
+          📦 Painel de Estoque
+        </h1>
+      </div>
+
+      {/* FORMULÁRIO COM TEXTO PRETO (CORRIGIDO) */}
+      <form onSubmit={salvarProduto} style={formStyle}>
+        <input
+          placeholder="Nome da Peça *"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          style={inputStyle}
+        />
+        <input
+          placeholder="Preço (Ex: 150.00) *"
+          type="number"
+          value={preco}
+          onChange={(e) => setPreco(e.target.value)}
+          style={inputStyle}
+        />
+        <input
+          placeholder="Qtd em Estoque *"
+          type="number"
+          value={quantidade}
+          onChange={(e) => setQuantidade(e.target.value)}
+          style={inputStyle}
+        />
+
+        <div style={{ marginBottom: '15px', textAlign: 'left' }}>
+          <label
+            style={{
+              color: '#CCAA66',
+              fontSize: '14px',
+              display: 'block',
+              marginBottom: '8px',
+            }}
+          >
+            Foto da Camisa:
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            style={{ color: '#fff' }}
+          />
+
+          {foto && (
+            <div
+              style={{
+                marginTop: '10px',
+                position: 'relative',
+                display: 'inline-block',
+              }}
+            >
+              <img
+                src={foto}
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '8px',
+                  border: '2px solid #CCAA66',
+                }}
+                alt="Preview"
+              />
+              <button
+                type="button"
+                onClick={removerFotoSelecionada}
+                style={btnExcluirFoto}
+              >
+                X
+              </button>
+            </div>
+          )}
+        </div>
+
+        <button type="submit" style={btnSalvar}>
+          Cadastrar Produto
+        </button>
+      </form>
+
+      {/* LISTAGEM DE PRODUTOS */}
+      <div
+        style={{ marginTop: '40px', maxWidth: '800px', margin: '40px auto' }}
+      >
+        {estoque.map((p) => (
+          <div key={p.id} style={itemEstoqueStyle}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              {p.foto && (
+                <img
+                  src={p.foto}
+                  style={{ width: '50px', height: '50px', borderRadius: '5px' }}
+                />
+              )}
+              <div>
+                <p style={{ margin: 0, fontWeight: 'bold', color: '#CCAA66' }}>
+                  {p.nome}
+                </p>
+                <p style={{ margin: 0, fontSize: '14px' }}>
+                  R$ {Number(p.preco).toFixed(2)} | Qtd: {p.quantidade}
+                </p>
+              </div>
+            </div>
+            <button onClick={() => excluirProduto(p.id)} style={btnDelete}>
+              Excluir
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ESTILOS
+const btnVoltarStyle = {
+  background: 'transparent',
+  color: '#CCAA66',
+  border: '1px solid #CCAA66',
+  padding: '8px 15px',
+  borderRadius: '5px',
+  cursor: 'pointer',
+  fontWeight: 'bold' as 'bold',
+};
+const formStyle = {
+  maxWidth: '500px',
+  margin: '0 auto',
+  background: '#111',
+  padding: '25px',
+  borderRadius: '15px',
+  border: '1px solid #CCAA66',
+};
+const inputStyle = {
+  width: '100%',
+  padding: '12px',
+  marginBottom: '15px',
+  borderRadius: '8px',
+  border: 'none',
+  backgroundColor: '#fff',
+  color: '#000',
+  fontWeight: 'bold' as 'bold',
+};
+const btnSalvar = {
+  width: '100%',
+  padding: '15px',
+  background: '#CCAA66',
+  color: '#000',
+  border: 'none',
+  borderRadius: '8px',
+  fontWeight: 'bold' as 'bold',
+  cursor: 'pointer',
+};
+const btnExcluirFoto = {
+  position: 'absolute' as 'absolute',
+  top: '-5px',
+  right: '-5px',
+  background: 'red',
+  color: '#fff',
+  border: 'none',
+  borderRadius: '50%',
+  width: '22px',
+  height: '22px',
+  cursor: 'pointer',
+  fontSize: '12px',
+};
+const itemEstoqueStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  background: '#111',
+  padding: '15px',
+  marginBottom: '10px',
+  borderRadius: '10px',
+  border: '1px solid #333',
+};
+const btnDelete = {
+  background: '#ff4444',
+  color: '#fff',
+  border: 'none',
+  padding: '8px 12px',
+  borderRadius: '5px',
+  cursor: 'pointer',
+  fontSize: '12px',
+};
